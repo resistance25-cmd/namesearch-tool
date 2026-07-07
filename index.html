@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>namesearch.exe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #0a0e14;
+    --bg-panel: #10151f;
+    --bg-panel-2: #141a26;
+    --border: #1f2937;
+    --border-bright: #2dd4bf33;
+    --text: #d7dde5;
+    --text-dim: #6b7688;
+    --text-bright: #f1f5f9;
+    --accent: #2dd4bf;
+    --accent-dim: #2dd4bf1a;
+    --accent2: #a78bfa;
+    --accent2-dim: #a78bfa1a;
+    --warn: #fb923c;
+    --warn-dim: #fb923c1a;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 8%, #143a3622 0%, transparent 45%),
+      radial-gradient(circle at 85% 92%, #2d1a4a22 0%, transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 22px 90px;}
+
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes blink{ 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+  @keyframes glow{ 0%,100%{box-shadow:0 0 0 0 var(--accent-dim);} 50%{box-shadow:0 0 0 6px transparent;} }
+  @keyframes popIn{ from{opacity:0; transform:scale(.92);} to{opacity:1; transform:scale(1);} }
+  @keyframes panelIn{
+    from{opacity:0; transform:translateY(22px) scale(.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes sheen{
+    0%{ background-position:-150% 0; }
+    100%{ background-position:250% 0; }
+  }
+  @keyframes badgePulse{
+    0%,100%{ box-shadow:0 0 0 0 var(--accent-dim); }
+    50%{ box-shadow:0 0 12px 2px var(--accent-dim); }
+  }
+  @keyframes dotPop{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.25); }
+  }
+  @keyframes bgDrift{
+    0%,100%{ background-position:15% 8%, 85% 92%; }
+    50%{ background-position:20% 14%, 80% 86%; }
+  }
+
+  body{ background-size:200% 200%, 200% 200%, 100% 100%; animation:bgDrift 18s ease-in-out infinite; }
+  .dot-row .dot{ animation:dotPop 2.4s ease-in-out infinite; }
+  .dot-row .dot.y{ animation-delay:.15s; }
+  .dot-row .dot.g{ animation-delay:.3s; }
+  .badge{ animation:badgePulse 3s ease-in-out infinite; }
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:28px;
+    animation:fadeUp .5s ease both;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .dot-row{display:flex;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;}
+  .dot.r{background:#ef4444;} .dot.y{background:#f59e0b;} .dot.g{background:#22c55e;}
+  .brand-text{font-family:var(--mono);font-size:14px;color:var(--text-dim);}
+  .brand-text b{color:var(--text-bright);font-weight:700;}
+  .cursor{display:inline-block;width:8px;height:16px;background:var(--accent);margin-left:2px;vertical-align:middle;animation:blink 1s step-end infinite;}
+  .badge{
+    font-family:var(--mono);font-size:10.5px;color:var(--accent);
+    background:var(--accent-dim);border:1px solid var(--border-bright);
+    padding:5px 10px;border-radius:20px;letter-spacing:0.5px;
+  }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px;
+    margin-bottom:22px;
+    position:relative;
+    overflow:hidden;
+    animation:panelIn .55s cubic-bezier(.2,.8,.2,1) both;
+    transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  .panel:nth-of-type(1){animation-delay:.05s;}
+  .panel:nth-of-type(2){animation-delay:.15s;}
+  .panel:nth-of-type(3){animation-delay:.25s;}
+  .panel:hover{
+    transform:translateY(-3px);
+    border-color:var(--border-bright);
+    box-shadow:0 12px 32px rgba(0,0,0,0.28);
+  }
+  .panel.spousal:hover{border-color:var(--accent2)55;}
+  .panel::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0.5;
+  }
+  .panel::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(100deg, transparent 40%, rgba(45,212,191,0.06) 50%, transparent 60%);
+    background-size:250% 100%;
+    background-position:-150% 0;
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .panel:hover::after{ opacity:1; animation:sheen 1.4s ease; }
+  .panel.spousal{border-color:var(--accent2)33;background:linear-gradient(180deg, rgba(167,139,250,0.06), transparent 40%), var(--bg-panel);}
+  .panel.spousal::before{background:linear-gradient(90deg, transparent, var(--accent2), transparent);}
+
+  .panel-label{
+    display:flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;
+    color:var(--text-dim);margin-bottom:16px;
+  }
+  .panel-label .tag{
+    color:var(--accent);background:var(--accent-dim);
+    padding:3px 8px;border-radius:6px;font-size:10px;
+  }
+  .panel.spousal .panel-label .tag{color:var(--accent2);background:var(--accent2-dim);}
+
+  .field-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;margin-bottom:12px;}
+  .field-row.two{grid-template-columns:2fr auto;}
+  .field-row.three{grid-template-columns:1fr 1fr 1fr;}
+  @media (max-width:720px){ .field-row, .field-row.three{grid-template-columns:1fr 1fr;} .field-row.two{grid-template-columns:1fr;} }
+
+  label{
+    display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:1px;color:var(--text-dim);margin-bottom:6px;
+  }
+  input[type=text]{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:11px 12px;font-family:var(--mono);font-size:14px;color:var(--text-bright);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input[type=text]::placeholder{color:#3d4759;}
+  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+  .panel.spousal input[type=text]:focus{border-color:var(--accent2);box-shadow:0 0 0 3px var(--accent2-dim);}
+
+  .opt-row{display:flex;flex-wrap:wrap;gap:16px;margin:14px 0 4px;}
+  .opt-row label{
+    display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;
+    font-size:12.5px;color:var(--text);cursor:pointer;font-family:var(--sans);
+  }
+  input[type=checkbox]{
+    appearance:none;width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;
+    background:var(--bg);cursor:pointer;position:relative;transition:.15s;
+  }
+  input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent);}
+  input[type=checkbox]:checked::after{
+    content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:#0a0e14;font-weight:700;
+  }
+  input[type=checkbox]:disabled{opacity:0.5;cursor:default;}
+
+  .hint{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.6;}
+  .hint a{color:var(--accent);}
+
+  button.run{
+    margin-top:14px;background:var(--accent);color:#06201c;border:none;border-radius:8px;
+    padding:12px 20px;font-family:var(--mono);font-weight:700;font-size:12.5px;letter-spacing:0.8px;
+    text-transform:uppercase;cursor:pointer;transition:transform .15s ease, box-shadow .2s ease, letter-spacing .2s ease;
+  }
+  button.run:hover{box-shadow:0 6px 24px var(--accent-dim);transform:translateY(-2px) scale(1.03);letter-spacing:1.2px;}
+  button.run:active{transform:translateY(0) scale(.98);}
+  .panel.spousal button.run{background:var(--accent2);color:#1c1330;}
+  .panel.spousal button.run:hover{box-shadow:0 4px 20px var(--accent2-dim);}
+
+  #output{animation:fadeUp .4s ease both;}
+  .results-head{
+    display:flex;justify-content:space-between;align-items:center;padding:14px 18px;
+    background:var(--bg-panel-2);border:1px solid var(--border);border-radius:10px 10px 0 0;
+    font-family:var(--mono);flex-wrap:wrap;gap:8px;
+  }
+  .results-head h2{font-size:14px;margin:0;color:var(--text-bright);font-weight:600;}
+  .results-head h2 .prompt{color:var(--accent);}
+  .count{font-size:11px;color:var(--text-dim);}
+  .copy-all{color:var(--accent);cursor:pointer;text-decoration:none;border-bottom:1px dashed var(--accent);}
+  .copy-all:hover{color:var(--text-bright);}
+
+  .results-body{
+    border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+    padding:18px;background:var(--bg-panel);
+  }
+  .detect-banner{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    background:var(--bg-panel-2);border:1px dashed var(--border);border-radius:8px;
+    padding:12px 14px;margin-bottom:18px;font-family:var(--mono);font-size:12px;color:var(--text-dim);
+  }
+  .detect-chip{
+    background:var(--accent-dim);color:var(--accent);border:1px solid var(--border-bright);
+    padding:3px 9px;border-radius:6px;font-size:11px;
+  }
+  .detect-chip.warn{background:var(--warn-dim);color:var(--warn);border-color:var(--warn)44;}
+  .detect-chip.dim{background:transparent;color:var(--text-dim);border-color:var(--border);}
+
+  .group{margin-bottom:20px;}
+  .group:last-child{margin-bottom:0;}
+  .group-label{
+    display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;
+    text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);margin-bottom:10px;
+  }
+  .group-label::before{content:'▸';color:var(--accent);}
+  .group-count{color:var(--text-dim);font-size:10px;}
+
+  .combo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+  .combo{
+    background:var(--bg-panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+    font-family:var(--mono);font-size:13px;color:var(--text);
+    display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;
+    transition:border-color .12s, background .12s, transform .08s;
+    animation:popIn .25s ease both;
+  }
+  .combo:hover{border-color:var(--accent);background:#131b26;transform:translateY(-1px);}
+  .combo.copied{background:var(--accent);border-color:var(--accent);color:#06201c;}
+  .combo .tag{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;}
+  .combo.copied .tag{color:#06201c;opacity:0.7;}
+  .combo.info{cursor:default;border-style:dashed;color:var(--text-dim);}
+  .combo.info:hover{transform:none;border-color:var(--border);background:var(--bg-panel-2);}
+
+  .empty{
+    font-family:var(--mono);font-size:12.5px;color:var(--text-dim);padding:30px 18px;text-align:center;
+    border:1px dashed var(--border);border-radius:10px;line-height:1.7;
+  }
+  .empty a{color:var(--accent);}
+
+  footer{
+    margin-top:36px;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);
+    border-top:1px solid var(--border);padding-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+  footer .dot-live{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:6px;animation:glow 2s ease-in-out infinite;}
+
+  /* ---------------- SIGNATURE FOOTER (anime.js cycling text) ---------------- */
+  .signature-footer{justify-content:center;padding-top:26px;align-items:center;}
+  .sig-wrap{display:flex;align-items:center;gap:10px;}
+  .ml4{
+    position:relative;
+    font-family:var(--mono);
+    font-weight:800;
+    font-size:15px;
+    letter-spacing:0.4px;
+    height:1.4em;
+    min-width:220px;
+  }
+  .ml4 .letters{
+    position:absolute;
+    margin:auto;
+    left:0;right:0;top:0;
+    white-space:nowrap;
+    opacity:0;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .sig-cursor{
+    display:inline-block;width:6px;height:13px;background:var(--accent);
+    animation:blink 1s step-end infinite;
+  }
+  body[data-theme="glass"] .ml4 .letters{background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;}
+  body[data-theme="glass"] .sig-cursor{background:#0891b2;}
+  body[data-theme="liquid"] .ml4 .letters{background:linear-gradient(135deg,#2dd4bf,#a78bfa,#fb923c);background-size:200% 200%;-webkit-background-clip:text;background-clip:text;animation:gradientShift 4s ease infinite;}
+  body[data-theme="liquid"] .sig-cursor{background:#5eead4;}
+
+  /* ---------------- THEME SWITCHER ---------------- */
+  .theme-switch{
+    display:flex;gap:2px;background:var(--bg-panel-2);border:1px solid var(--border);
+    border-radius:999px;padding:3px;
+  }
+  .theme-btn{
+    background:transparent;border:none;color:var(--text-dim);font-family:var(--mono);
+    font-size:10.5px;letter-spacing:0.5px;padding:6px 12px;border-radius:999px;cursor:pointer;
+    transition:background .2s, color .2s;
+  }
+  .theme-btn.active{background:var(--accent);color:#06201c;font-weight:700;}
+  .theme-btn:not(.active):hover{color:var(--text-bright);}
+
+  /* ---------------- LIQUID BACKGROUND (hidden unless liquid theme active) ---------------- */
+  .liquid-bg{position:fixed;inset:0;overflow:hidden;z-index:-1;opacity:0;transition:opacity .5s;pointer-events:none;}
+  body[data-theme="liquid"] .liquid-bg{opacity:1;}
+  .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:0.55;animation:float 16s ease-in-out infinite;}
+  .blob.b1{width:420px;height:420px;background:radial-gradient(circle, #2dd4bf, transparent 70%);top:-100px;left:-80px;animation-delay:0s;}
+  .blob.b2{width:480px;height:480px;background:radial-gradient(circle, #a78bfa, transparent 70%);bottom:-140px;right:-100px;animation-delay:-5s;}
+  .blob.b3{width:340px;height:340px;background:radial-gradient(circle, #fb923c, transparent 70%);top:40%;left:50%;animation-delay:-10s;}
+  @keyframes float{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    33%{ transform:translate(40px,-50px) scale(1.1); }
+    66%{ transform:translate(-30px,40px) scale(0.95); }
+  }
+
+  /* ==================================================================
+     THEME: GLASS (glassmorphism)
+     ================================================================== */
+  body[data-theme="glass"]{
+    background:
+      radial-gradient(circle at 20% 10%, #5eead422 0%, transparent 50%),
+      radial-gradient(circle at 80% 90%, #c4b5fd22 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, #f9a8d422 0%, transparent 60%),
+      linear-gradient(160deg, #e0e7ff 0%, #f0fdfa 50%, #fdf4ff 100%);
+  }
+  body[data-theme="glass"] .brand-text,
+  body[data-theme="glass"] .brand-text b{color:#1e293b;}
+  body[data-theme="glass"] .cursor{background:#0891b2;}
+  body[data-theme="glass"] .badge{
+    background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.6);color:#0e7490;
+    backdrop-filter:blur(10px);
+  }
+  body[data-theme="glass"] .theme-switch{background:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.5);backdrop-filter:blur(10px);}
+  body[data-theme="glass"] .theme-btn{color:#475569;}
+  body[data-theme="glass"] .theme-btn.active{background:linear-gradient(135deg,#22d3ee,#a78bfa);color:#fff;}
+
+  body[data-theme="glass"] .panel{
+    background:rgba(255,255,255,0.35);
+    border:1px solid rgba(255,255,255,0.6);
+    backdrop-filter:blur(20px) saturate(160%);
+    -webkit-backdrop-filter:blur(20px) saturate(160%);
+    box-shadow:0 8px 32px rgba(31,41,55,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  body[data-theme="glass"] .panel::before{background:linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent);}
+  body[data-theme="glass"] .panel.spousal{background:rgba(250,245,255,0.4);border-color:rgba(196,181,253,0.6);}
+  body[data-theme="glass"] .panel.spousal::before{background:linear-gradient(90deg, transparent, rgba(167,139,250,0.8), transparent);}
+  body[data-theme="glass"] .panel-label{color:#475569;}
+  body[data-theme="glass"] .panel-label .tag{background:rgba(34,211,238,0.25);color:#0e7490;}
+  body[data-theme="glass"] .panel.spousal .panel-label .tag{background:rgba(167,139,250,0.25);color:#7c3aed;}
+
+  body[data-theme="glass"] label{color:#64748b;}
+  body[data-theme="glass"] input[type=text]{
+    background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.7);color:#1e293b;
+    backdrop-filter:blur(8px);
+  }
+  body[data-theme="glass"] input[type=text]::placeholder{color:#94a3b8;}
+  body[data-theme="glass"] input[type=text]:focus{border-color:#22d3ee;box-shadow:0 0 0 3px rgba(34,211,238,0.2);}
+  body[data-theme="glass"] .panel.spousal input[type=text]:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,0.2);}
+
+  body[data-theme="glass"] .opt-row label{color:#334155;}
+  body[data-theme="glass"] input[type=checkbox]{background:rgba(255,255,255,0.5);border-color:rgba(148,163,184,0.5);}
+  body[data-theme="glass"] input[type=checkbox]:checked{background:#22d3ee;border-color:#22d3ee;}
+  body[data-theme="glass"] .panel.spousal input[type=checkbox]:checked{background:#a78bfa;border-color:#a78bfa;}
+
+  body[data-theme="glass"] .hint{color:#64748b;}
+  body[data-theme="glass"] .hint a{color:#0891b2;}
+
+  body[data-theme="glass"] button.run{
+    background:linear-gradient(135deg,#22d3ee,#0891b2);color:#fff;
+    box-shadow:0 4px 14px rgba(34,211,238,0.35);
+  }
+  body[data-theme="glass"] button.run:hover{box-shadow:0 6px 24px rgba(34,211,238,0.5);}
+  body[data-theme="glass"] .panel.spousal button.run{background:linear-gradient(135deg,#a78bfa,#7c3aed);box-shadow:0 4px 14px rgba(167,139,250,0.35);}
+  body[data-theme="glass"] .panel.spousal button.run:hover{box-shadow:0 6px 24px rgba(167,139,250,0.5);}
+
+  body[data-theme="glass"] .results-head{
+    background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);backdrop-filter:blur(16px);
+  }
+  body[data-theme="glass"] .results-head h2{color:#1e293b;}
+  body[data-theme="glass"] .results-head h2 .prompt{color:#0891b2;}
+  body[data-theme="glass"] .count{color:#64748b;}
+  body[data-theme="glass"] .copy-all{color:#0891b2;border-color:#0891b2;}
+  body[data-theme="glass"] .results-body{background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.6);backdrop-filter:blur(20px);}
+  body[data-theme="glass"] .detect-banner{background:rgba(255,255,255,0.4);border:1px dashed rgba(148,163,184,0.4);color:#64748b;}
+  body[data-theme="glass"] .detect-chip{background:rgba(34,211,238,0.2);color:#0e7490;border-color:rgba(34,211,238,0.4);}
+  body[data-theme="glass"] .detect-chip.warn{background:rgba(251,146,60,0.2);color:#c2410c;border-color:rgba(251,146,60,0.4);}
+  body[data-theme="glass"] .group-label{color:#0891b2;}
+  body[data-theme="glass"] .group-label::before{color:#0891b2;}
+  body[data-theme="glass"] .group-count{color:#94a3b8;}
+  body[data-theme="glass"] .combo{
+    background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.7);color:#1e293b;
+    backdrop-filter:blur(8px);
+  }
+  body[data-theme="glass"] .combo:hover{border-color:#22d3ee;background:rgba(255,255,255,0.75);}
+  body[data-theme="glass"] .combo.copied{background:linear-gradient(135deg,#22d3ee,#0891b2);border-color:#0891b2;color:#fff;}
+  body[data-theme="glass"] .combo.info{color:#64748b;background:rgba(255,255,255,0.3);}
+  body[data-theme="glass"] .empty{color:#64748b;border-color:rgba(148,163,184,0.4);}
+  body[data-theme="glass"] .empty a{color:#0891b2;}
+  body[data-theme="glass"] footer{color:#64748b;border-color:rgba(148,163,184,0.3);}
+  body[data-theme="glass"] footer .dot-live{background:#22d3ee;}
+
+  /* ==================================================================
+     THEME: LIQUID (fluid glassy gradients, glossy controls)
+     ================================================================== */
+  body[data-theme="liquid"]{background:#0b0f1a;}
+  body[data-theme="liquid"] .brand-text,
+  body[data-theme="liquid"] .brand-text b{color:#f1f5f9;}
+  body[data-theme="liquid"] .badge{
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e0f2fe;backdrop-filter:blur(12px);
+  }
+  body[data-theme="liquid"] .theme-switch{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(12px);}
+  body[data-theme="liquid"] .theme-btn{color:#94a3b8;}
+  body[data-theme="liquid"] .theme-btn.active{background:linear-gradient(135deg,#2dd4bf,#a78bfa,#fb923c);background-size:200% 200%;color:#08131a;animation:gradientShift 6s ease infinite;font-weight:700;}
+
+  @keyframes gradientShift{
+    0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}
+  }
+
+  body[data-theme="liquid"] .panel{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.12);
+    backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    box-shadow:0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition:transform .3s, box-shadow .3s;
+  }
+  body[data-theme="liquid"] .panel:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);}
+  body[data-theme="liquid"] .panel::before{
+    background:linear-gradient(90deg, transparent, #2dd4bf, #a78bfa, #fb923c, transparent);
+    background-size:200% 100%;animation:gradientShift 8s linear infinite;height:2px;opacity:0.8;
+  }
+  body[data-theme="liquid"] .panel-label{color:#94a3b8;}
+  body[data-theme="liquid"] .panel-label .tag{background:rgba(45,212,191,0.15);color:#5eead4;border:1px solid rgba(45,212,191,0.3);}
+  body[data-theme="liquid"] .panel.spousal .panel-label .tag{background:rgba(167,139,250,0.15);color:#c4b5fd;border:1px solid rgba(167,139,250,0.3);}
+
+  body[data-theme="liquid"] label{color:#94a3b8;}
+  body[data-theme="liquid"] input[type=text]{
+    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#f1f5f9;
+    backdrop-filter:blur(10px);
+  }
+  body[data-theme="liquid"] input[type=text]::placeholder{color:#64748b;}
+  body[data-theme="liquid"] input[type=text]:focus{border-color:#5eead4;box-shadow:0 0 0 4px rgba(45,212,191,0.15), 0 0 24px rgba(45,212,191,0.15);}
+  body[data-theme="liquid"] .panel.spousal input[type=text]:focus{border-color:#c4b5fd;box-shadow:0 0 0 4px rgba(167,139,250,0.15), 0 0 24px rgba(167,139,250,0.15);}
+
+  body[data-theme="liquid"] .opt-row label{color:#cbd5e1;}
+  body[data-theme="liquid"] input[type=checkbox]{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.2);}
+  body[data-theme="liquid"] input[type=checkbox]:checked{background:linear-gradient(135deg,#2dd4bf,#5eead4);border-color:#2dd4bf;}
+  body[data-theme="liquid"] .panel.spousal input[type=checkbox]:checked{background:linear-gradient(135deg,#a78bfa,#c4b5fd);border-color:#a78bfa;}
+
+  body[data-theme="liquid"] .hint{color:#94a3b8;}
+  body[data-theme="liquid"] .hint a{color:#5eead4;}
+
+  body[data-theme="liquid"] button.run{
+    background:linear-gradient(135deg,#2dd4bf,#22d3ee);color:#06201c;
+    box-shadow:0 4px 20px rgba(45,212,191,0.35);border:1px solid rgba(255,255,255,0.15);
+  }
+  body[data-theme="liquid"] button.run:hover{box-shadow:0 6px 32px rgba(45,212,191,0.55);transform:translateY(-2px) scale(1.02);}
+  body[data-theme="liquid"] .panel.spousal button.run{background:linear-gradient(135deg,#a78bfa,#f472b6);color:#1c1330;box-shadow:0 4px 20px rgba(167,139,250,0.35);}
+  body[data-theme="liquid"] .panel.spousal button.run:hover{box-shadow:0 6px 32px rgba(167,139,250,0.55);}
+
+  body[data-theme="liquid"] .results-head{
+    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(20px);
+  }
+  body[data-theme="liquid"] .results-head h2{color:#f1f5f9;}
+  body[data-theme="liquid"] .results-head h2 .prompt{color:#5eead4;}
+  body[data-theme="liquid"] .count{color:#94a3b8;}
+  body[data-theme="liquid"] .copy-all{color:#5eead4;border-color:#5eead4;}
+  body[data-theme="liquid"] .results-body{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(24px);}
+  body[data-theme="liquid"] .detect-banner{background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.15);color:#94a3b8;}
+  body[data-theme="liquid"] .detect-chip{background:rgba(45,212,191,0.15);color:#5eead4;border-color:rgba(45,212,191,0.3);}
+  body[data-theme="liquid"] .detect-chip.warn{background:rgba(251,146,60,0.15);color:#fdba74;border-color:rgba(251,146,60,0.3);}
+  body[data-theme="liquid"] .group-label{color:#5eead4;}
+  body[data-theme="liquid"] .group-label::before{color:#5eead4;}
+  body[data-theme="liquid"] .group-count{color:#64748b;}
+  body[data-theme="liquid"] .combo{
+    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;
+    backdrop-filter:blur(10px);
+  }
+  body[data-theme="liquid"] .combo:hover{
+    border-color:#5eead4;background:rgba(45,212,191,0.08);transform:translateY(-2px) scale(1.02);
+    box-shadow:0 8px 20px rgba(45,212,191,0.15);
+  }
+  body[data-theme="liquid"] .combo.copied{background:linear-gradient(135deg,#2dd4bf,#22d3ee);border-color:#2dd4bf;color:#06201c;}
+  body[data-theme="liquid"] .combo.info{color:#94a3b8;background:rgba(255,255,255,0.03);}
+  body[data-theme="liquid"] .empty{color:#94a3b8;border-color:rgba(255,255,255,0.15);}
+  body[data-theme="liquid"] .empty a{color:#5eead4;}
+  body[data-theme="liquid"] footer{color:#94a3b8;border-color:rgba(255,255,255,0.1);}
+  body[data-theme="liquid"] footer .dot-live{background:#5eead4;}
+</style>
+</head>
+<body>
+<div class="liquid-bg" id="liquidBg">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="dot-row"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <span class="brand-text">~/title-search/<b>namesearch</b><span class="cursor"></span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="theme-switch" id="themeSwitch">
+        <button class="theme-btn active" data-theme-btn="terminal" onclick="setTheme('terminal')">Terminal</button>
+        <button class="theme-btn" data-theme-btn="glass" onclick="setTheme('glass')">Glass</button>
+        <button class="theme-btn" data-theme-btn="liquid" onclick="setTheme('liquid')">Liquid</button>
+      </div>
+      <span class="badge">GI · CHAIN-OF-TITLE</span>
+    </div>
+  </header>
+
+  <!-- UNIFIED ENGINE: one input, auto-detects region, generates pairwise combos -->
+  <div class="panel">
+    <div class="panel-label"><span class="tag">MAIN</span> name search combinator</div>
+    <div class="field-row two">
+      <div>
+        <label>full name — as it appears on the document</label>
+        <input type="text" id="mainName" placeholder="e.g. Robert Anderson Peter, or Wang Wei">
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="run" onclick="runMain()">run →</button>
+      </div>
+    </div>
+    <div class="opt-row">
+      <label><input type="checkbox" id="optSuffix" checked> with / without suffix (Jr/Sr/III)</label>
+      <label><input type="checkbox" id="optInitials" checked> include initial combinations</label>
+      <label><input type="checkbox" id="optAka"> include AKA / prior surname</label>
+    </div>
+    <div id="akaField" style="display:none;margin-top:12px;">
+      <label>AKA / prior surname</label>
+      <input type="text" id="mainAka" placeholder="e.g. Cole">
+    </div>
+    <div class="hint">
+      // logic: every 2-word slice of the name is generated in its original order — this needs no surname guess for American/European names.<br>
+      // if any word matches a known East Asian surname, the tool also flips each pair (surname-first ↔ surname-last), since that convention isn't position-fixed.<br>
+      // entity/trust name? just type it in as-is — the tool detects it's not a person name and switches to entity-variant mode automatically.
+    </div>
+  </div>
+
+  <!-- SPOUSAL: the one case that genuinely needs surname identification -->
+  <div class="panel spousal">
+    <div class="panel-label"><span class="tag">SPOUSAL</span> husband / wife search — asymmetric by design</div>
+    <div class="field-row three">
+      <div><label>husband — full name</label><input type="text" id="spHusband" placeholder="Robert Anderson"></div>
+      <div><label>wife — given name</label><input type="text" id="spWifeGiven" placeholder="Sarah"></div>
+      <div><label>wife — maiden surname</label><input type="text" id="spWifeMaiden" placeholder="Cole"></div>
+    </div>
+    <div class="field-row" style="grid-template-columns:1fr auto;">
+      <div><label>husband's surname (auto-filled if blank)</label><input type="text" id="spHusbandSurname" placeholder="Anderson"></div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="run" onclick="runSpousal()">run →</button>
+      </div>
+    </div>
+    <div class="hint">
+      // this is the one mode that must identify the surname specifically — "wife's given name + husband's surname" isn't a pairwise slice, it's a targeted rule.<br>
+      // husband is searched only under his own surname. wife is searched under both her maiden surname and his surname, since either may appear depending on when a deed was recorded relative to the marriage. override manually if the parties don't fit this pattern.
+    </div>
+  </div>
+
+  <!-- ONLINE: optional, leaves the browser -->
+  <div class="panel">
+    <div class="panel-label"><span class="tag">ONLINE</span> alias lookup <span style="color:var(--text-dim);font-weight:400;">— optional, behindthename.com API</span></div>
+    <div class="field-row" style="grid-template-columns:1fr auto;">
+      <div><label>given name</label><input type="text" id="btnName" placeholder="Robert"></div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="run" onclick="lookupAliases()">check aliases →</button>
+      </div>
+    </div>
+    <div class="hint">// the only part of this tool that leaves your browser. if the call fails (CORS), you'll get a direct link to open instead.</div>
+  </div>
+
+  <div id="output"></div>
+
+  <footer class="signature-footer">
+    <div class="sig-wrap">
+      <span class="dot-live"></span>
+      <h1 class="ml4 sig-anim">
+        <span class="letters letters-1">Handcrafted</span>
+        <span class="letters letters-2">Shipped with care</span>
+        <span class="letters letters-3">by Gaurav</span>
+      </h1>
+      <span class="sig-cursor"></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Name classification database — used ONLY to (a) detect Asian-origin surnames
+// for the both-orders rule, and (b) identify a surname for spousal logic.
+// It is NOT used to gate the main pairwise engine, which works without it.
+// ---------------------------------------------------------------------------
+const SURNAME_EAST_ASIAN = ["wang","li","zhang","liu","chen","yang","huang","zhao","wu","zhou","xu","sun","ma","zhu",
+"hu","guo","he","gao","lin","luo","zheng","liang","song","xie","tang","han","feng","yu","dong","cui",
+"tanaka","suzuki","takahashi","watanabe","ito","yamamoto","nakamura","kobayashi","saito","kato","yoshida","yamada",
+"sasaki","yamaguchi","matsumoto","inoue","kimura","hayashi","shimizu","mori","abe","ikeda","hashimoto","yamashita",
+"kim","lee","park","choi","jung","kang","cho","yoon","jang","lim","han","oh","seo","shin","kwon","hwang","song","ahn",
+"nguyen","tran","le","pham","hoang","phan","vu","dang","bui","do","ho","ngo","duong","ly"];
+
+const SURNAME_SOUTH_ASIAN = ["patel","sharma","singh","kumar","gupta","reddy","rao","nair","iyer","menon","pillai",
+"chopra","malhotra","kapoor","verma","mehta","shah","joshi","desai","agarwal","bose","banerjee","mukherjee",
+"chatterjee","das","dutta","sen","tripathi","pandey","mishra","dubey","tiwari","yadav","chauhan","rajput",
+"khan","ahmed","hussain","malik","chaudhry","qureshi","siddiqui","ansari","baig","raza"];
+
+function isAsianSurnameWord(w){
+  const key = w.trim().toLowerCase();
+  return SURNAME_EAST_ASIAN.includes(key) || SURNAME_SOUTH_ASIAN.includes(key);
+}
+
+function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1).toLowerCase() : s; }
+function initial(s){ return s ? s.charAt(0).toUpperCase()+"." : ""; }
+function uniq(arr){ return Array.from(new Set(arr.map(s=>s.trim()).filter(Boolean))); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function setTheme(name){
+  document.body.setAttribute('data-theme', name);
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-theme-btn') === name);
+  });
+  try{ localStorage.setItem('namesearch-theme', name); }catch(e){}
+}
+(function initTheme(){
+  let saved = 'terminal';
+  try{ saved = localStorage.getItem('namesearch-theme') || 'terminal'; }catch(e){}
+  setTheme(saved);
+})();
+
+document.getElementById('optAka').addEventListener('change', function(){
+  document.getElementById('akaField').style.display = this.checked ? 'block' : 'none';
+});
+
+// ---------------------------------------------------------------------------
+// MAIN ENGINE — pairwise 2-word slicing, order-preserving by default,
+// auto-flips each pair if any word in the name matches a known Asian surname.
+// ---------------------------------------------------------------------------
+function runMain(){
+  const raw = document.getElementById('mainName').value.trim();
+  const includeSuffix = document.getElementById('optSuffix').checked;
+  const includeInitials = document.getElementById('optInitials').checked;
+  const includeAka = document.getElementById('optAka').checked;
+  const aka = document.getElementById('mainAka').value.trim();
+  const out = document.getElementById('output');
+
+  if(!raw){
+    out.innerHTML = '<div class="empty">$ enter a full name to generate combinations</div>';
+    return;
+  }
+
+  // Entity/trust detection: looks like a business name, not a person
+  if(/\b(LLC|Inc\.?|Corp\.?|Corporation|Trust|LP|L\.P\.|Company|Co\.|Partners|Foundation)\b/i.test(raw)){
+    const combos = new Set();
+    combos.add(raw);
+    combos.add(raw.replace(/,?\s*(LLC|Inc\.?|L\.L\.C\.|Corp\.?|Corporation|Trust|LP|L\.P\.)$/i,'').trim());
+    combos.add(raw.replace(/&/g,'and'));
+    combos.add(raw.replace(/\band\b/gi,'&'));
+    if(!/^the\s/i.test(raw)) combos.add("The "+raw);
+    renderGroups(out, [{label:"entity name variants", combos: uniq(Array.from(combos))}],
+      raw, [{label:"detected", value:"entity / trust name", cls:"dim"}]);
+    return;
+  }
+
+  // Separate a trailing suffix (Jr, Sr, II, III, IV) so it doesn't get treated as a name word
+  let suffix = "";
+  let words = raw.split(/\s+/).filter(Boolean);
+  const suffixPattern = /^(Jr\.?|Sr\.?|II|III|IV|V)$/i;
+  if(words.length > 1 && suffixPattern.test(words[words.length-1])){
+    suffix = words[words.length-1];
+    words = words.slice(0, -1);
+  }
+
+  if(words.length < 2){
+    out.innerHTML = '<div class="empty">$ need at least two name words (excluding suffix)</div>';
+    return;
+  }
+
+  const asianHit = words.some(isAsianSurnameWord);
+  const groups = [];
+
+  // Full name as-is
+  let fullSet = new Set();
+  fullSet.add(words.join(' '));
+  if(includeSuffix && suffix) fullSet.add(words.join(' ')+' '+suffix);
+  groups.push({label:"full name", combos: uniq(Array.from(fullSet))});
+
+  // Pairwise 2-word slices — the core engine
+  let pairSet = new Set();
+  for(let i=0;i<words.length;i++){
+    for(let j=i+1;j<words.length;j++){
+      pairSet.add([words[i], words[j]].join(' '));
+      if(asianHit) pairSet.add([words[j], words[i]].join(' '));
+    }
+  }
+  groups.push({
+    label: asianHit ? "pairwise combinations (both orders — Asian surname detected)" : "pairwise combinations",
+    combos: uniq(Array.from(pairSet))
+  });
+
+  // Initials
+  if(includeInitials){
+    let initSet = new Set();
+    initSet.add([initial(words[0]), ...words.slice(1)].join(' '));
+    initSet.add([...words.slice(0,-1).map(initial), words[words.length-1]].join(' '));
+    if(asianHit) initSet.add([words[words.length-1], ...words.slice(0,-1).map(initial)].join(' '));
+    groups.push({label:"initial combinations", combos: uniq(Array.from(initSet))});
+  }
+
+  // AKA / prior surname
+  if(includeAka && aka){
+    let akaSet = new Set();
+    akaSet.add([words[0], aka].join(' '));
+    akaSet.add([initial(words[0]), aka].join(' '));
+    groups.push({label:"AKA / prior surname", combos: uniq(Array.from(akaSet))});
+  }
+
+  const detected = [
+    { label:"words", value: String(words.length), cls:"dim" },
+    asianHit
+      ? { label:"region", value:"Asian surname match → both orders generated", cls:"warn" }
+      : { label:"region", value:"no Asian-surname match → original order preserved", cls:"dim" }
+  ];
+  if(suffix) detected.push({label:"suffix", value:suffix, cls:"dim"});
+
+  renderGroups(out, groups, raw, detected);
+}
+
+// ---------------------------------------------------------------------------
+// SPOUSAL — the one place surname identity actually matters
+// ---------------------------------------------------------------------------
+function runSpousal(){
+  const husbandFull = document.getElementById('spHusband').value.trim();
+  const wifeGiven = document.getElementById('spWifeGiven').value.trim();
+  const wifeMaiden = document.getElementById('spWifeMaiden').value.trim();
+  let husbandSurname = document.getElementById('spHusbandSurname').value.trim();
+  const out = document.getElementById('output');
+
+  if(!husbandFull || !wifeGiven){
+    out.innerHTML = '<div class="empty">$ enter at least the husband\'s full name and wife\'s given name</div>';
+    return;
+  }
+
+  const husbandWords = husbandFull.split(/\s+/).filter(Boolean);
+  if(!husbandSurname) husbandSurname = husbandWords[husbandWords.length-1];
+
+  const groups = [];
+
+  let husbandSet = new Set();
+  husbandSet.add(husbandFull);
+  husbandSet.add([husbandWords[0], husbandSurname].join(' '));
+  groups.push({label:"husband — own surname only", combos: uniq(Array.from(husbandSet))});
+
+  let wifeMaidenSet = new Set();
+  if(wifeMaiden){
+    wifeMaidenSet.add([wifeGiven, wifeMaiden].join(' '));
+    wifeMaidenSet.add([initial(wifeGiven), wifeMaiden].join(' '));
+  }
+  groups.push({label:"wife — maiden surname", combos: uniq(Array.from(wifeMaidenSet))});
+
+  let wifeMarriedSet = new Set();
+  wifeMarriedSet.add([wifeGiven, husbandSurname].join(' '));
+  wifeMarriedSet.add([initial(wifeGiven), husbandSurname].join(' '));
+  if(wifeMaiden){
+    wifeMarriedSet.add([wifeGiven, wifeMaiden+"-"+husbandSurname].join(' '));
+    wifeMarriedSet.add([wifeGiven, husbandSurname+"-"+wifeMaiden].join(' '));
+    wifeMarriedSet.add(`${wifeGiven} ${wifeMaiden} ${husbandSurname}`);
+  }
+  groups.push({label:"wife — husband's surname (incl. hyphenated / maiden-as-middle)", combos: uniq(Array.from(wifeMarriedSet))});
+
+  groups.push({
+    label:"note",
+    combos: ["Asymmetric by design — husband not tested under wife's maiden surname. Override manually if this doesn't fit the actual parties."],
+    isInfo:true
+  });
+
+  renderGroups(out, groups, `${husbandFull} & ${wifeGiven} ${wifeMaiden||''}`.trim(),
+    [{label:"surname anchor", value:husbandSurname, cls:"dim"}]);
+}
+
+// ---------------------------------------------------------------------------
+// ONLINE alias lookup (behindthename.com)
+// ---------------------------------------------------------------------------
+async function lookupAliases(){
+  const name = document.getElementById('btnName').value.trim();
+  const out = document.getElementById('output');
+
+  if(!name){
+    out.innerHTML = '<div class="empty">$ enter a name to look up</div>';
+    return;
+  }
+
+  const url = `/api/lookup?name=${encodeURIComponent(name)}`;
+  out.innerHTML = '<div class="empty">$ querying behindthename.com …</div>';
+
+  try{
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(data.error){
+      out.innerHTML = `<div class="empty">$ API error: ${escapeHtml(String(data.error))}<br><br>double-check your key at <a href="https://www.behindthename.com/api/" target="_blank">behindthename.com/api</a></div>`;
+      return;
+    }
+
+    const names = Array.isArray(data) ? data.map(d => d.name || d).flat() : (data.names || []);
+    const flat = uniq((Array.isArray(names) ? names : []).map(n => typeof n === 'string' ? n : (n.name || '')));
+
+    if(!flat.length){
+      out.innerHTML = `<div class="empty">$ no alias data returned for "${escapeHtml(name)}"</div>`;
+      return;
+    }
+
+    renderGroups(out, [{label:`aliases for "${cap(name)}" — via behindthename.com`, combos: flat}], name, [{label:"source", value:"behindthename.com API", cls:"dim"}]);
+  } catch(err){
+    out.innerHTML = `<div class="empty">
+      $ request to /api/lookup failed — check that this file is deployed on Vercel (the api/ folder only works when hosted, not opened as a local file)<br><br>
+      error: ${escapeHtml(String(err))}
+    </div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared rendering
+// ---------------------------------------------------------------------------
+function renderGroups(out, groups, headerName, detectedChips){
+  let total = 0;
+  groups.forEach(g => total += g.combos.length);
+
+  let html = `<div class="results-head">
+    <h2><span class="prompt">$</span> search_set <span style="color:var(--text-dim)">--name</span> "${escapeHtml(headerName||'untitled')}"</h2>
+    <div class="count">${total} combos · <a class="copy-all" onclick="copyAll()">copy all</a></div>
+  </div><div class="results-body">`;
+
+  if(detectedChips && detectedChips.length){
+    html += `<div class="detect-banner">`;
+    detectedChips.forEach(c => {
+      html += `<span class="detect-chip ${c.cls||''}">${escapeHtml(c.label)}: ${escapeHtml(c.value)}</span>`;
+    });
+    html += `</div>`;
+  }
+
+  groups.forEach(g => {
+    if(!g.combos.length) return;
+    html += `<div class="group"><div class="group-label">${g.label} <span class="group-count">(${g.combos.length})</span></div><div class="combo-grid">`;
+    g.combos.forEach((c, i) => {
+      if(g.isInfo){
+        html += `<div class="combo info" style="animation-delay:${i*20}ms"><span>${escapeHtml(c)}</span></div>`;
+      } else {
+        html += `<div class="combo" style="animation-delay:${i*20}ms" onclick="copyOne(this)"><span>${escapeHtml(c)}</span><span class="tag">copy</span></div>`;
+      }
+    });
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+  out.innerHTML = html;
+  out._allCombos = groups.filter(g => !g.isInfo).flatMap(g => g.combos);
+}
+
+function copyOne(el){
+  const text = el.querySelector('span').textContent;
+  navigator.clipboard.writeText(text).catch(()=>{});
+  el.classList.add('copied');
+  const tag = el.querySelector('.tag');
+  const old = tag.textContent;
+  tag.textContent = 'copied';
+  setTimeout(()=>{ el.classList.remove('copied'); tag.textContent = old; }, 900);
+}
+
+function copyAll(){
+  const out = document.getElementById('output');
+  const all = out._allCombos || [];
+  navigator.clipboard.writeText(all.join('\n')).catch(()=>{});
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Footer signature — "Ready Set Go!"-style cycling text via anime.js
+// ---------------------------------------------------------------------------
+(function(){
+  var sig = {};
+  sig.opacityIn = [0,1];
+  sig.scaleIn = [0.2, 1];
+  sig.scaleOut = 3;
+  sig.durationIn = 800;
+  sig.durationOut = 600;
+  sig.delay = 500;
+
+  anime.timeline({loop:true})
+    .add({
+      targets:'.sig-anim .letters-1',
+      opacity:sig.opacityIn,
+      scale:sig.scaleIn,
+      duration:sig.durationIn
+    }).add({
+      targets:'.sig-anim .letters-1',
+      opacity:0,
+      scale:sig.scaleOut,
+      duration:sig.durationOut,
+      easing:'easeInExpo',
+      delay:sig.delay
+    }).add({
+      targets:'.sig-anim .letters-2',
+      opacity:sig.opacityIn,
+      scale:sig.scaleIn,
+      duration:sig.durationIn
+    }).add({
+      targets:'.sig-anim .letters-2',
+      opacity:0,
+      scale:sig.scaleOut,
+      duration:sig.durationOut,
+      easing:'easeInExpo',
+      delay:sig.delay
+    }).add({
+      targets:'.sig-anim .letters-3',
+      opacity:sig.opacityIn,
+      scale:sig.scaleIn,
+      duration:sig.durationIn
+    }).add({
+      targets:'.sig-anim .letters-3',
+      opacity:0,
+      scale:sig.scaleOut,
+      duration:sig.durationOut,
+      easing:'easeInExpo',
+      delay:sig.delay
+    });
+})();
+</script>
+</body>
+</html>
